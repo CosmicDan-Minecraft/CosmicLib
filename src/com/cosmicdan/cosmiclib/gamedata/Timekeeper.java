@@ -23,8 +23,8 @@ public final class Timekeeper {
 		return INSTANCE;
 	}
 
-	private static final int TICKS_PER_DAY = 24000;
-	private static final int TICKS_PER_HOUR = 1000;
+	private static final double TICKS_PER_DAY = 24000.0;
+	private static final double TICKS_PER_HOUR = 1000.0;
 
 	private static final int TICKER_MAX = 50; // TODO: Offload to config. Also a separate ticker for client...?
 
@@ -32,8 +32,6 @@ public final class Timekeeper {
 	private final ScheduledExecutorService timekeeperScheduleClient = Executors.newScheduledThreadPool(1);
 	private ScheduledFuture<?> timekeeperTaskServer = null;
 	private ScheduledFuture<?> timekeeperTaskClient = null;
-	//private Thread timekeeperThreadServer = null;
-	//private Thread timekeeperThreadClient = null;
 	private int ticker = 0;
 	private boolean syncDone = false;
 
@@ -48,8 +46,10 @@ public final class Timekeeper {
 	@Getter private volatile int dayTicksElapsed;
 	/** Get current hour of the day. Zero-based. Use {@link #calcHourOfDay()} to get a clock-adjusted hour. */
 	@Getter private volatile int hourInDay; // 0 == 6am
-	/** Get the number of ticks that have passed since the last whole hour. Use {@link #calcMinutesPastHour()} for minutes-converted value. */
-	@Getter private volatile int dayTicksPastHourElapsed;
+	/** Get the number of ticks that have passed since the last whole hour. Use {@link #getMinutesSinceHourElapsed()} for minutes-converted value. */
+	@Getter private volatile int ticksSinceHourElapsed;
+	/** Get the number of minutes that have passed since the last whole hour. */
+	@Getter private volatile int minutesSinceHourElapsed;
 
 	@SubscribeEvent
 	public void onServerTick(TickEvent.WorldTickEvent event) {
@@ -127,14 +127,6 @@ public final class Timekeeper {
 		return (hourInDay + 6) - ((17 < hourInDay) ? 24 : 0);
 	}
 
-	/**
-	 * Calculate the minutes passed since the last whole hour.
-	 * Note that this operation requires division - don't go crazy with it.
-	 */
-	public int calcMinutesPastHour() {
-		return (dayTicksPastHourElapsed * 60) / 1000;
-	}
-
 	@SuppressWarnings("NonStaticInnerClassInSecureContext")
 	private final class TimekeeperSchedule implements Runnable {
 		private long worldTimeLast = 0L;
@@ -146,6 +138,8 @@ public final class Timekeeper {
 		private int dayHoursRawElapsedCalcLast = 0;
 		private int dayTicksPastHourElapsedCalc = 0;
 		private int dayTicksPastHourElapsedCalcLast = 0;
+		private int dayMinutesPastHourElapsedCalc = 0;
+		private int dayMinutesPastHourElapsedCalcLast = 0;
 
 		@SuppressWarnings({"MethodWithMoreThanThreeNegations", "NumericCastThatLosesPrecision"})
 		@Override
@@ -174,17 +168,24 @@ public final class Timekeeper {
 				}
 
 				// hourInDay
-				dayHoursRawElapsedCalc = dayTicksElapsedCalc / TICKS_PER_HOUR;
+				dayHoursRawElapsedCalc = (int) (dayTicksElapsedCalc / TICKS_PER_HOUR);
 				if (dayHoursRawElapsedCalc != dayHoursRawElapsedCalcLast) {
 					dayHoursRawElapsedCalcLast = dayHoursRawElapsedCalc;
 					Timekeeper.this.hourInDay = dayHoursRawElapsedCalcLast;
 				}
 
-				// dayTicksPastHourElapsed
+				// ticksSinceHourElapsed
 				dayTicksPastHourElapsedCalc = (int) (worldTimeLast - (dayHoursRawElapsedCalc * TICKS_PER_HOUR));
 				if (dayTicksPastHourElapsedCalc != dayTicksPastHourElapsedCalcLast) {
 					dayTicksPastHourElapsedCalcLast = dayTicksPastHourElapsedCalc;
-					Timekeeper.this.dayTicksPastHourElapsed = dayTicksPastHourElapsedCalcLast;
+					Timekeeper.this.ticksSinceHourElapsed = dayTicksPastHourElapsedCalcLast;
+				}
+
+				// minutesSinceHourElapsed
+				dayMinutesPastHourElapsedCalc = (int) ((dayTicksPastHourElapsedCalc / TICKS_PER_HOUR) * 60);
+				if (dayMinutesPastHourElapsedCalc != dayMinutesPastHourElapsedCalcLast) {
+					dayMinutesPastHourElapsedCalcLast = dayMinutesPastHourElapsedCalc;
+					Timekeeper.this.minutesSinceHourElapsed = dayMinutesPastHourElapsedCalcLast;
 				}
 			}
 		}
