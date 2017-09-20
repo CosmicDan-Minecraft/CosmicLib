@@ -26,7 +26,7 @@ public final class Timekeeper {
 	private static final double TICKS_PER_DAY = 24000.0;
 	private static final double TICKS_PER_HOUR = 1000.0;
 
-	private static final int TICKER_MAX = 50; // TODO: Offload to config. Also a separate ticker for client...?
+	private static final int TICKER_MAX = 10; // TODO: Offload to config. Also a separate ticker for client...?
 
 	private final ScheduledExecutorService timekeeperScheduleServer = Executors.newScheduledThreadPool(1);
 	private final ScheduledExecutorService timekeeperScheduleClient = Executors.newScheduledThreadPool(1);
@@ -71,7 +71,7 @@ public final class Timekeeper {
 		if (0 == event.getWorld().provider.getDimension()) {
 			final boolean isRemote = event.getWorld().isRemote;
 			final ScheduledExecutorService timekeeperSchedule = isRemote ? timekeeperScheduleClient : timekeeperScheduleServer;
-			final ScheduledFuture<?> task = timekeeperSchedule.scheduleAtFixedRate(new TimekeeperSchedule(), 0, 100, TimeUnit.MILLISECONDS);
+			final ScheduledFuture<?> task = timekeeperSchedule.scheduleAtFixedRate(new TimekeeperSchedule(), 0, 10, TimeUnit.MILLISECONDS);
 			if (isRemote)
 				timekeeperTaskClient = task;
 			else
@@ -175,7 +175,7 @@ public final class Timekeeper {
 				}
 
 				// ticksSinceHourElapsed
-				dayTicksPastHourElapsedCalc = (int) (worldTimeLast - (dayHoursRawElapsedCalc * TICKS_PER_HOUR));
+				dayTicksPastHourElapsedCalc = (int) (dayTicksElapsedCalc - (dayHoursRawElapsedCalc * TICKS_PER_HOUR));
 				if (dayTicksPastHourElapsedCalc != dayTicksPastHourElapsedCalcLast) {
 					dayTicksPastHourElapsedCalcLast = dayTicksPastHourElapsedCalc;
 					Timekeeper.this.ticksSinceHourElapsed = dayTicksPastHourElapsedCalcLast;
