@@ -9,7 +9,7 @@ import java.util.Arrays;
 /**
  * Mirror for instantiating classes with private constructors
  */
-@Log4j2(topic =  "CosmicLib/ConstructorMirror")
+@Log4j2(topic = "CosmicLib/ConstructorMirror")
 public class ConstructorMirror extends MirrorBase {
 	private final String className;
 	private final Class<?>[] parameterTypes;

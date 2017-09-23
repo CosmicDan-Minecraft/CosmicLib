@@ -7,17 +7,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-@Log4j2(topic = Main.MODNAME + "/RenderDebugInfo")
+@Log4j2(topic = "CosmicLib/RenderDebugInfo")
 public class RenderDebugInfo {
+	private final Timekeeper timekeeper = Timekeeper.getInstance();
+
 	@SubscribeEvent
 	public void onDebugOverlay(RenderGameOverlayEvent.Text event) {
 		if (Minecraft.getMinecraft().gameSettings.showDebugInfo) {
 			String debugLine = "CosmicLib: ";
 
-			Timekeeper timekeeper = Timekeeper.getInstance();
 			debugLine += timekeeper.calcHourOfDay() + ":" + timekeeper.getMinutesSinceHourElapsed();
-			//debugLine += timekeeper.calcHourOfDay() + ":" + timekeeper.getTicksSinceHourElapsed();
-			//debugLine += timekeeper.getHourInDay() + ":" + timekeeper.getTicksSinceHourElapsed();
 
 			event.getLeft().add(debugLine);
 		}

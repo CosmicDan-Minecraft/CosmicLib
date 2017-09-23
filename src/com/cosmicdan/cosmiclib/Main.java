@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-@Log4j2(topic =  Main.MODID)
+@Log4j2(topic = "CosmicLib")
 @Mod(modid = Main.MODID, version = "${version}")
 public class Main {
 	public static final String MODNAME = "CosmicLib";

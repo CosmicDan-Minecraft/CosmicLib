@@ -9,7 +9,7 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
-@Log4j2(topic =  Main.MODID + "/ClientProxy")
+@Log4j2(topic = "CosmicLib/ClientProxy")
 public class ClientProxy extends CommonProxy {
 	@Override
 	public final void preInit(FMLPreInitializationEvent event) {

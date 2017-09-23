@@ -1,6 +1,5 @@
 package com.cosmicdan.cosmiclib.server;
 
-import com.cosmicdan.cosmiclib.Main;
 import com.cosmicdan.cosmiclib.common.CommonProxy;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -10,7 +9,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 /**
  * Dedicated server events
  */
-@Log4j2(topic =  Main.MODID + "/ServerProxy")
+@Log4j2(topic = "CosmicLib/ServerProxy")
 public class ServerProxy extends CommonProxy {
 	@Override
 	public final void preInit(FMLPreInitializationEvent event) {

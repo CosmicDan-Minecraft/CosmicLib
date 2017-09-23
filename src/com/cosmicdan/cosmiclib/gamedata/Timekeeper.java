@@ -13,7 +13,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("CyclicClassDependency")
-@Log4j2(topic =  "CosmicLib/Timekeeper")
+@Log4j2(topic = "CosmicLib/Timekeeper")
 public final class Timekeeper {
 	private static final Timekeeper INSTANCE = new Timekeeper();
 

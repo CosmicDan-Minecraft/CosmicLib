@@ -1,7 +1,7 @@
 package com.cosmicdan.cosmiclib.annotations;
 
 /**
- * Marker annotation for IntelliJ IDEA code inspection to suppress some warnings related to Forge Mod Loader
+ * This is a field that Forge/FML sets dynamically
  */
 public @interface ForgeDynamic{
 }
