@@ -1,6 +1,5 @@
 package com.cosmicdan.cosmiclib.common;
 
-import com.cosmicdan.cosmiclib.Main;
 import com.cosmicdan.cosmiclib.gamedata.Timekeeper;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.common.MinecraftForge;
@@ -11,7 +10,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 /**
  * Events for both physical servers and clients. Most things will belong here.
  */
-@Log4j2(topic =  Main.MODID + "/CommonProxy")
+@Log4j2(topic = "CosmicLib/CommonProxy")
 public class CommonProxy {
 	/**
 	 * Register blocks/items to GameRegistry, (tile) entities ans assign oredict names

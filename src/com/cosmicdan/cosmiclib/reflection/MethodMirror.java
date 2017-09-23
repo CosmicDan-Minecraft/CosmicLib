@@ -7,7 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-@Log4j2(topic =  "CosmicLib/MethodMirror")
+@Log4j2(topic = "CosmicLib/MethodMirror")
 public class MethodMirror extends MirrorBase {
 	private final ObfuscatedString methodName;
 	private final Class<?> methodClass;

@@ -5,7 +5,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.lang.reflect.Field;
 
-@Log4j2(topic =  "CosmicLib/FieldMirror")
+@Log4j2(topic = "CosmicLib/FieldMirror")
 public class FieldMirror extends MirrorBase {
 	private final ObfuscatedString fieldName;
 	private final Class<?> fieldClass;
