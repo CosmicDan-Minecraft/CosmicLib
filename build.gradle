@@ -82,17 +82,6 @@ dependencies {
 	testCompile "junit:junit:4.12"
 }
 
-sourceSets {
-    main {
-        resources {
-            srcDir 'resources'
-        }
-        java {
-            srcDir 'src'
-        }
-    }
-}
-
 processResources {
     // this will ensure that this task is redone when the versions change.
     inputs.property "version", project.version
