@@ -16,8 +16,8 @@ public class RenderDebugInfo {
 		if (Minecraft.getMinecraft().gameSettings.showDebugInfo) {
 			String debugLine = "CosmicLib: ";
 
-			debugLine += "Time = " + timekeeper.calcHourOfDay() + ":" + timekeeper.getMinutesSinceHourElapsed() + "; ";
-			debugLine += "Day = " + timekeeper.getWorldDayCount() + "; ";
+			debugLine += "Time = " + timekeeper.calcHourOfDay() + ":" + String.format("%02d", timekeeper.getMinutesSinceHourElapsed()) + "; ";
+			debugLine += "Day# = " + timekeeper.getWorldDayCount() + "; ";
 			debugLine += "Cached Ticks = " + timekeeper.getWorldTimeCached();
 
 			event.getLeft().add(debugLine);

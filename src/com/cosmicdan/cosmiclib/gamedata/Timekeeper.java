@@ -1,5 +1,6 @@
 package com.cosmicdan.cosmiclib.gamedata;
 
+import cc.redberry.libdivide4j.FastDivision;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.client.Minecraft;
@@ -24,9 +25,11 @@ public final class Timekeeper {
 	}
 
 	private static final double TICKS_PER_DAY = 24000.0;
+	private static final FastDivision.Magic TICKS_PER_DAY_MAGIC = FastDivision.magicUnsigned((long) TICKS_PER_DAY);
 	private static final double TICKS_PER_HOUR = 1000.0;
+	private static final FastDivision.Magic TICKS_PER_HOUR_MAGIC = FastDivision.magicUnsigned((long) TICKS_PER_HOUR);
 
-	private static final int TICKER_MAX = 10; // TODO: Offload to config. Also a separate ticker for client...?
+	private static final int TICKER_MAX = 10;
 
 	private final ScheduledExecutorService timekeeperScheduleServer = Executors.newScheduledThreadPool(1);
 	private final ScheduledExecutorService timekeeperScheduleClient = Executors.newScheduledThreadPool(1);
@@ -45,12 +48,20 @@ public final class Timekeeper {
 	@Getter private volatile int worldDayCount;
 	/** Get the number of ticks that have passed on this day. */
 	@Getter private volatile int dayTicksElapsed;
-	/** Get current hour of the day. Zero-based. Use {@link #calcHourOfDay()} to get a clock-adjusted hour. */
+	/** Get current in-game hour of the day. Zero-based. Use {@link #calcHourOfDay()} to get a clock-adjusted hour. */
 	@Getter private volatile int hourInDay; // 0 == 6am
 	/** Get the number of ticks that have passed since the last whole hour. Use {@link #getMinutesSinceHourElapsed()} for minutes-converted value. */
 	@Getter private volatile int ticksSinceHourElapsed;
-	/** Get the number of minutes that have passed since the last whole hour. */
+	/** Get the number of in-game minutes that have passed since the last whole hour. */
 	@Getter private volatile int minutesSinceHourElapsed;
+
+	/**
+	 * Calculate a clock-adjusted hour of day.
+	 * e.g. midnight returns 0, sunrise (actual start of a Minecraft day) returns 6.
+	 */
+	public int calcHourOfDay() {
+		return (hourInDay + 6) - ((17 < hourInDay) ? 24 : 0);
+	}
 
 	@SubscribeEvent
 	public void onServerTick(TickEvent.WorldTickEvent event) {
@@ -109,7 +120,7 @@ public final class Timekeeper {
 		//log.info("Ticker for worldtime " + worldTime + " is at " + ticker);
 		if (!syncDone) {
 			if (0 == (worldTime % TICKER_MAX)) {
-				log.info("Timekeeper update rate synchronised to worldtime quotient");
+				log.info("Timekeeper synchronised to worldtime on tick-rate quotient");
 				ticker = TICKER_MAX;
 				syncDone = true;
 			}
@@ -118,14 +129,6 @@ public final class Timekeeper {
 			ticker = 0;
 			this.worldTimeCached = worldTime;
 		}
-	}
-
-	/**
-	 * Calculate a clock-adjusted hour of day.
-	 * e.g. midnight returns 0, sunrise (actual start of a Minecraft day) returns 6.
-	 */
-	public int calcHourOfDay() {
-		return (hourInDay + 6) - ((17 < hourInDay) ? 24 : 0);
 	}
 
 	@SuppressWarnings("NonStaticInnerClassInSecureContext")
@@ -154,8 +157,10 @@ public final class Timekeeper {
 
 			if (0 <= worldTimeLast) {
 				//log.info(Timekeeper.this.worldTimeCached + " is new, let's do updates!");
+
 				// worldDayCount
-				worldDayCountCalc = (int) (worldTimeLast / TICKS_PER_DAY);
+				//worldDayCountCalc = (int) (worldTimeLast / TICKS_PER_DAY);
+				worldDayCountCalc = (int) FastDivision.divideUnsignedFast(worldTimeLast, TICKS_PER_DAY_MAGIC);
 				if (worldDayCountCalc != worldDayCountCalcLast) {
 					worldDayCountCalcLast = worldDayCountCalc;
 					Timekeeper.this.worldDayCount = worldDayCountCalcLast;
@@ -169,7 +174,8 @@ public final class Timekeeper {
 				}
 
 				// hourInDay
-				dayHoursRawElapsedCalc = (int) (dayTicksElapsedCalc / TICKS_PER_HOUR);
+				//dayHoursRawElapsedCalc = (int) (dayTicksElapsedCalc / TICKS_PER_HOUR);
+				dayHoursRawElapsedCalc = (int) FastDivision.divideUnsignedFast(dayTicksElapsedCalc, TICKS_PER_DAY_MAGIC);
 				if (dayHoursRawElapsedCalc != dayHoursRawElapsedCalcLast) {
 					dayHoursRawElapsedCalcLast = dayHoursRawElapsedCalc;
 					Timekeeper.this.hourInDay = dayHoursRawElapsedCalcLast;
@@ -183,7 +189,8 @@ public final class Timekeeper {
 				}
 
 				// minutesSinceHourElapsed
-				dayMinutesPastHourElapsedCalc = (int) ((dayTicksPastHourElapsedCalc / TICKS_PER_HOUR) * 60);
+				//dayMinutesPastHourElapsedCalc = (int) (dayTicksPastHourElapsedCalc * 60 / TICKS_PER_HOUR);
+				dayMinutesPastHourElapsedCalc = (int) (FastDivision.divideUnsignedFast(dayTicksPastHourElapsedCalc * 60, TICKS_PER_HOUR_MAGIC));
 				if (dayMinutesPastHourElapsedCalc != dayMinutesPastHourElapsedCalcLast) {
 					dayMinutesPastHourElapsedCalcLast = dayMinutesPastHourElapsedCalc;
 					Timekeeper.this.minutesSinceHourElapsed = dayMinutesPastHourElapsedCalcLast;
@@ -191,6 +198,4 @@ public final class Timekeeper {
 			}
 		}
 	}
-
-
 }
