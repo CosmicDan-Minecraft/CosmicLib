@@ -12,8 +12,12 @@ buildscript {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
 }
+
+plugins {
+	id 'io.franzbecker.gradle-lombok' version '1.10'
+}
+
 apply plugin: 'net.minecraftforge.gradle.forge'
-//Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 
 ext.configFile = file "build.properties"
 configFile.withReader {
@@ -37,20 +41,26 @@ task buildInfo {
         ext.revision = "GITBORK"
     }
 
-    ext.buildNum = "devbuild.${project.buildInfo.revision}"
+    ext.buildNum = "testbuild.${project.buildInfo.revision}"
 }
 
 ext.artifact_version = 'NFG'
-artifact_version = '${config.mod_version}.${config.mod_buildnumber}.${project.buildInfo.buildNum}'
-if (System.getenv("RELEASEMODE") == "true") {
-    artifact_version = '${config.mod_version}.${config.mod_buildnumber}'
-}
+ext.cosmicmod_releasemode = System.getenv("COSMICMOD_RELEASEMODE")
+if ("${cosmicmod_releasemode}" != "null") {
+	if ("${cosmicmod_releasemode}" == "RELEASE")
+		artifact_version = "${config.mod_version}.${config.mod_revision}"
+	else
+		artifact_version = "${config.mod_version}.${config.mod_revision}.${cosmicmod_releasemode}"
+} else
+	artifact_version = "${config.mod_version}.${config.mod_revision}.${project.buildInfo.buildNum}"
 version = "${config.minecraft_version}-${artifact_version}"
 
 task incrementBuildnumber(type:Copy){
-    ant.propertyfile(file: configFile) {
-        entry(key: 'mod_buildnumber', type: 'int', operation: '+', value: 001)
-    }
+	if ("${cosmicmod_releasemode}" != "null") {
+		ant.propertyfile(file: configFile) {
+			entry(key: 'mod_revision', type: 'int', operation: '+', value: 001)
+		}
+	}
 }
 compileJava.dependsOn incrementBuildnumber
 
@@ -60,52 +70,16 @@ compileJava {
 }
 
 minecraft {
-    version = config.minecraft_version + "-" + config.forge_version
+    version = config.forge_version
     runDir = "run"
-    replace '${version}', project.version
-    
-    // the mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   snapshot are built nightly.
-    // stable_#            stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
-    // simply re-run your setup task after changing the mappings to update your workspace.
-    mappings = "snapshot_20170624"
+    replace "${version}", project.version
+    mappings = config.mappings
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
 }
 
 dependencies {
-    // you may put jars on which you depend on in ./libs
-    // or you may define them like so..
-    //compile "some.group:artifact:version:classifier"
-    //compile "some.group:artifact:version"
-      
-    // real examples
-    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
-    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
-
-    // the 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
-    //provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // the deobf configurations:  'deobfCompile' and 'deobfProvided' are the same as the normal compile and provided,
-    // except that these dependencies get remapped to your current MCP mappings
-    //deobfCompile 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-    //deobfProvided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-
-    // for more info...
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
-
-}
-
-sourceSets {
-    main {
-        resources {
-            srcDir 'resources'
-        }
-        java {
-            srcDir 'src'
-        }
-    }
+	compileOnly "org.projectlombok:lombok:1.16.18"
+	testCompile "junit:junit:4.12"
 }
 
 processResources {
@@ -125,4 +99,35 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
     }
+}
+
+jar {
+    manifest {
+        // AT's here
+    }
+    finalizedBy reobfJar
+}
+
+// Create deobf dev jars
+task deobfJar(type: Jar) {
+    from sourceSets.main.output
+    classifier = 'deobf'
+	manifest {
+        // AT's here
+    }
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+artifacts {
+    archives deobfJar
+    archives sourcesJar
+}
+
+lombok {
+	version = "1.16.18"
+	sha256 = ""
 }

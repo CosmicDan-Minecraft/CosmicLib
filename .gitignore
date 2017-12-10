@@ -2,7 +2,9 @@
 .gradle/
 .idea/
 build/
-gradle/
 out/
 run/
+
+.classpath
+*.iml
 
