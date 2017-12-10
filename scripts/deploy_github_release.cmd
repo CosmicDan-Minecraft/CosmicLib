@@ -6,7 +6,7 @@ CALL :GET_PROP "build.properties" "mod_revision" "modrev"
 SET MOD_VERSION=%modver%.%modrev%
 echo [i] Detected current mod version: %MOD_VERSION%
 echo This script is for deploying source to GitHub. Full details:
-echo 	- Merge commits from master to the github_master branch;
+echo 	- Merge commits from master to the release branch;
 echo 	- Squash all these new commits on github_master with commit message of '%MOD_VERSION%' (current detected version from build.properties);
 echo 	- Create a tag of '%MOD_VERSION%';
 echo 	- Push to 'github' remote;
@@ -16,18 +16,32 @@ echo [#] Press any key three times to go!
 
 pause>nul && pause>nul && pause>nul
 
+@echo on
+:: checkout release and merge our changes from master...
+git checkout release
+git merge master
 
+:: checkout github_master and merge our changes from release...
 git checkout github_master
-git merge --squash master
+git merge --squash release
 git commit -m "%MOD_VERSION%"
-git tag 1.0.0 -m "1.0.0"
+git tag %MOD_VERSION% -m "%MOD_VERSION%"
+
+:: push github_master to github origin
 git push github HEAD:master
 
+:: push changes back to release and master
 git push origin github_master
-git checkout master
+
+git checkout release
 git merge github_master
+git push origin release
+
+git checkout master
+git merge release
 git push origin master
 
+@echo off
 echo.
 echo.
 echo.
