@@ -35,7 +35,7 @@ All code and asset contributors to this mod **MUST** sign a Contributor Licensin
 ## Distribution
   * You **MAY NOT PUBLICLY** distribute this mod on any site, forum or network/distribution system without CosmicDan's explicit permission, excluding situations which comply to the *Mod Packs* requirements described below.
   * You **MAY PRIVATELY** share the file directly to friends or in some other non-public, direct-to-user method for the purposes of private multiplayer games, however you **MUST** link them to THIS license. It would be appreciated, however, if you instead linked them directly to the Curse page for the mod.
-  * Alpha, beta and other development builds **MAY NOT** be redistributed **EVER**. **NO EXCEPTIONS**. These releases are designated by an .ALPHA, .BETA or .DEV suffix to the version code.
+  * You **MAY NOT** distribute alpha, beta or other development builds - i.e. files with ALPHA, BETA or DEV in their version code. **NO EXCEPTIONS**. These pre-releases may ONLY be distributed by CosmicDan.
 
 ## Mod Packs
 

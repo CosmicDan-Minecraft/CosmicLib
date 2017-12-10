@@ -1,3 +1,5 @@
 With the exception or addition of credits listed in this file, all content of this mod is fully bound by the terms defined in LICENSE.md. In the absence of any ownership information existing alongside a piece of content (e.g. class headers, sibling NOTICE files, etc.), the content in question is considered to be the property of Daniel "CosmicDan" Connolly.
 
--
+ - LibDivide4j
+Ported to Java by PoslavskySV - https://github.com/PoslavskySV/libdivide4j
+
