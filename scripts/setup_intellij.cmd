@@ -1,4 +1,6 @@
 @echo off
+SETLOCAL
+pushd %~dp0\..
 echo If you are updating Forge, make sure you have modified build.properties with the new version string first!
 pause
 call gradlew.bat setupDecompWorkspace --refresh-dependencies

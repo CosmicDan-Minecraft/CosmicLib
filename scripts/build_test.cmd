@@ -1,4 +1,4 @@
 SETLOCAL
-pushd %~dp0
+pushd %~dp0\..
 call gradlew build
 pause

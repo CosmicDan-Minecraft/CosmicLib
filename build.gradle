@@ -48,17 +48,17 @@ ext.artifact_version = 'NFG'
 ext.cosmicmod_releasemode = System.getenv("COSMICMOD_RELEASEMODE")
 if ("${cosmicmod_releasemode}" != "null") {
 	if ("${cosmicmod_releasemode}" == "RELEASE")
-		artifact_version = "${config.mod_version}.${config.mod_version_revision}"
+		artifact_version = "${config.mod_version}.${config.mod_revision}"
 	else
-		artifact_version = "${config.mod_version}.${config.mod_version_revision}.${cosmicmod_releasemode}"
+		artifact_version = "${config.mod_version}.${config.mod_revision}.${cosmicmod_releasemode}"
 } else
-	artifact_version = "${config.mod_version}.${config.mod_version_revision}.${project.buildInfo.buildNum}"
+	artifact_version = "${config.mod_version}.${config.mod_revision}.${project.buildInfo.buildNum}"
 version = "${config.minecraft_version}-${artifact_version}"
 
 task incrementBuildnumber(type:Copy){
 	if ("${cosmicmod_releasemode}" != "null") {
 		ant.propertyfile(file: configFile) {
-			entry(key: 'mod_version_revision', type: 'int', operation: '+', value: 001)
+			entry(key: 'mod_revision', type: 'int', operation: '+', value: 001)
 		}
 	}
 }
