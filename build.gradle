@@ -41,18 +41,22 @@ task buildInfo {
         ext.revision = "GITBORK"
     }
 
-    ext.buildNum = "devbuild.${project.buildInfo.revision}"
+    ext.buildNum = "testbuild.${project.buildInfo.revision}"
 }
 
 ext.artifact_version = 'NFG'
-artifact_version = "${config.mod_version}.${config.mod_version_revision}.${project.buildInfo.buildNum}"
-if (System.getenv("RELEASEMODE") == "true") {
-    artifact_version = "${config.mod_version}.${config.mod_version_revision}"
-}
+ext.cosmicmod_releasemode = System.getenv("COSMICMOD_RELEASEMODE")
+if ("${cosmicmod_releasemode}" != "null") {
+	if ("${cosmicmod_releasemode}" == "RELEASE")
+		artifact_version = "${config.mod_version}.${config.mod_version_revision}"
+	else
+		artifact_version = "${config.mod_version}.${config.mod_version_revision}.${cosmicmod_releasemode}"
+} else
+	artifact_version = "${config.mod_version}.${config.mod_version_revision}.${project.buildInfo.buildNum}"
 version = "${config.minecraft_version}-${artifact_version}"
 
 task incrementBuildnumber(type:Copy){
-	if (System.getenv("RELEASEMODE") == "true") {
+	if ("${cosmicmod_releasemode}" != "null") {
 		ant.propertyfile(file: configFile) {
 			entry(key: 'mod_version_revision', type: 'int', operation: '+', value: 001)
 		}
@@ -75,6 +79,7 @@ minecraft {
 
 dependencies {
 	compileOnly "org.projectlombok:lombok:1.16.18"
+	testCompile "junit:junit:4.12"
 }
 
 sourceSets {
