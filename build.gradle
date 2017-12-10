@@ -45,16 +45,16 @@ task buildInfo {
 }
 
 ext.artifact_version = 'NFG'
-artifact_version = "${config.mod_version}.${config.mod_buildnumber}.${project.buildInfo.buildNum}"
+artifact_version = "${config.mod_version}.${config.mod_version_revision}.${project.buildInfo.buildNum}"
 if (System.getenv("RELEASEMODE") == "true") {
-    artifact_version = "${config.mod_version}.${config.mod_buildnumber}"
+    artifact_version = "${config.mod_version}.${config.mod_version_revision}"
 }
 version = "${config.minecraft_version}-${artifact_version}"
 
 task incrementBuildnumber(type:Copy){
 	if (System.getenv("RELEASEMODE") == "true") {
 		ant.propertyfile(file: configFile) {
-			entry(key: 'mod_buildnumber', type: 'int', operation: '+', value: 001)
+			entry(key: 'mod_version_revision', type: 'int', operation: '+', value: 001)
 		}
 	}
 }
