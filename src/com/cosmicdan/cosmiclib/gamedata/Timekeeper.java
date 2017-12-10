@@ -37,6 +37,7 @@ public final class Timekeeper {
 
 
 	// set by main thread; gotten from timekeeper thread
+	@Getter
 	private volatile long worldTimeCached = -1L;
 
 	// These are all set by timekeeper thread and gotten (and get'd) via main thread

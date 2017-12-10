@@ -4,7 +4,6 @@
  */
 
 buildscript {
-
     repositories {
         jcenter()
         maven { url = "http://files.minecraftforge.net/maven" }
@@ -67,14 +66,15 @@ compileJava {
 }
 
 minecraft {
-    version = config.minecraft_version + "-" + config.forge_version
+    version = config.forge_version
     runDir = "run"
     replace "${version}", project.version
-    mappings = "snapshot_20170624"
+    mappings = config.mappings
     // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
 }
 
 dependencies {
+	compileOnly "org.projectlombok:lombok:1.16.18"
 }
 
 sourceSets {

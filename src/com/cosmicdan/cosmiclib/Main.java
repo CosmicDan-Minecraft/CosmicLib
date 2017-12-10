@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
+@SuppressWarnings({"StaticNonFinalField", "WeakerAccess"})
 @Log4j2(topic = "CosmicLib")
 @Mod(modid = Main.MODID, version = "${version}")
 public class Main {
