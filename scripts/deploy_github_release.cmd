@@ -1,29 +1,22 @@
 @echo off
 SETLOCAL
 pushd %~dp0\..
-CALL :GET_PROP "build.properties" "mod_version" "modver"
-CALL :GET_PROP "build.properties" "mod_revision" "modrev"
-SET MOD_VERSION=%modver%.%modrev%
+CALL :GET_PROP "version.properties" "major" "ver_major"
+CALL :GET_PROP "version.properties" "minor" "ver_minor"
+CALL :GET_PROP "version.properties" "revision" "ver_revision"
+SET MOD_VERSION=%ver_major%.%ver_minor%.%ver_revision%
 echo [i] Detected current mod version: %MOD_VERSION%
 echo This script is for deploying source to GitHub. Full details:
-echo 	- Merge commits from master to the release branch;
-echo 	- Squash all these new commits on github_master with commit message of '%MOD_VERSION%' (current detected version from build.properties);
 echo 	- Create a tag of '%MOD_VERSION%';
 echo 	- Push to 'github' remote;
-echo 	- Merge these changes back to the BitBucket origin.
+echo 	- Merge these changes back to the BitBucket origin branches.
 echo.
+echo [!] Make SURE you are currently on the release branch and that you have rebased/squashed history to however you want it to appear on GitHub!
 echo [#] Press any key three times to go!
 
 pause>nul && pause>nul && pause>nul
 
 @echo on
-:: checkout release and merge our changes from master...
-git checkout release
-git merge master
-
-:: checkout github_master and merge our changes from release...
-git checkout github_master
-git merge --squash release
 git commit -m "%MOD_VERSION%"
 git tag %MOD_VERSION% -m "%MOD_VERSION%"
 
