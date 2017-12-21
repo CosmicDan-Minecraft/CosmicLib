@@ -1,6 +1,6 @@
 How to submit a bug report to CosmicLib
 ====================================
-Please make sure the bug has not already been reported by [searching the issues](https://github.com/ForestryMC/ForestryMC/issues?q=is%3Aissue).
+Please make sure the bug has not already been reported by [searching the issues](https://github.com/CosmicDan-Minecraft/CosmicLib/issues?q=is%3Aissue).
 
 If you can, see if the bug still happens with the latest alpha/beta/development build.
 

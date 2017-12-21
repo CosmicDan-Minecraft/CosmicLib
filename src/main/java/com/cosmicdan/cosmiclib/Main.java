@@ -2,6 +2,7 @@ package com.cosmicdan.cosmiclib;
 
 import com.cosmicdan.cosmiclib.annotations.ForgeDynamic;
 import com.cosmicdan.cosmiclib.common.CommonProxy;
+import com.cosmicdan.cosmiclib.common.ModConstants;
 import lombok.extern.log4j.Log4j2;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -11,13 +12,10 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 @SuppressWarnings({"StaticNonFinalField", "WeakerAccess"})
 @Log4j2(topic = "CosmicLib")
-@Mod(modid = Main.MODID, version = "${version}")
+@Mod(modid = ModConstants.MODID, version = ModConstants.VERSION)
 public class Main {
-	public static final String MODNAME = "CosmicLib";
-	public static final String MODID = "cosmiclib";
-
 	@ForgeDynamic
-	@Mod.Instance(MODID)
+	@Mod.Instance(ModConstants.MODID)
 	public static Main INSTANCE = null;
 
 	@ForgeDynamic

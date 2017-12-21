@@ -29,9 +29,11 @@ git tag %MOD_VERSION% -m "%MOD_VERSION%"
 
 :: push github_master to github origin
 git push github HEAD:master
+git push github %MOD_VERSION%
 
 :: push changes back to release and master
 git push origin github_master
+git push github %MOD_VERSION%
 
 git checkout release
 git merge github_master

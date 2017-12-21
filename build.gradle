@@ -1,16 +1,16 @@
 /*
- * Based on Mantle (SlimeKnights) master build file (which is based on TConstruct's master build file)
- * Credits: Sunstrike, ProgWML6, AbrarSyed, CosmicDan
+ * CosmicDan's gradle build files were originally based on Mantle/TiC (SlimeKnights) design
+ * Big thanks to Sunstrike, ProgWML6, AbrarSyed
  */
 
 buildscript {
-    repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
+	repositories {
+		jcenter()
+		maven { url = "http://files.minecraftforge.net/maven" }
+	}
+	dependencies {
+		classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+	}
 }
 
 plugins {
@@ -19,46 +19,51 @@ plugins {
 
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-ext.configFile = file "build.properties"
-configFile.withReader {
-    // Load config.  It shall from now be referenced as simply config or project.config
-    def prop = new Properties()
-    prop.load(it)
-    project.ext.config = new ConfigSlurper().parse prop
+ext.buildPropsFile = file "build.properties"
+buildPropsFile.withReader {
+	def prop = new Properties()
+	prop.load(it)
+	project.ext.buildProps = new ConfigSlurper().parse prop
 }
 
-group = "${config.group}"
+ext.versionPropsFile = file "version.properties"
+versionPropsFile.withReader {
+	def prop = new Properties()
+	prop.load(it)
+	project.ext.versionProps = new ConfigSlurper().parse prop
+}
 
-// sets version to the slimeKnights default version format
-// Finds and sets version data
+group = buildProps.group
+
+// get current build number from Git log
 task buildInfo {
-    def cmd = "git rev-parse --short HEAD"
-    def proc = cmd.execute()
-    proc.waitFor()
-    if (proc.exitValue() == 0) {
-        ext.revision = proc.text.trim()
-    } else {
-        ext.revision = "GITBORK"
-    }
-
-    ext.buildNum = "testbuild.${project.buildInfo.revision}"
+	def cmd = "git rev-parse --short HEAD"
+	def proc = cmd.execute()
+	proc.waitFor()
+	if (proc.exitValue() == 0) {
+		ext.revision = proc.text.trim()
+	} else {
+		ext.revision = "GITBORK"
+	}
+	ext.buildNum = "testbuild.${project.buildInfo.revision}"
 }
 
-ext.artifact_version = 'NFG'
+// build version string
+ext.jarVersion = 'NFG'
 ext.cosmicmod_releasemode = System.getenv("COSMICMOD_RELEASEMODE")
+ext.baseVersion = "${versionProps.major}.${versionProps.minor}.${versionProps.revision}"
 if ("${cosmicmod_releasemode}" != "null") {
-	if ("${cosmicmod_releasemode}" == "RELEASE")
-		artifact_version = "${config.mod_version}.${config.mod_revision}"
-	else
-		artifact_version = "${config.mod_version}.${config.mod_revision}.${cosmicmod_releasemode}"
-} else
-	artifact_version = "${config.mod_version}.${config.mod_revision}.${project.buildInfo.buildNum}"
-version = "${config.minecraft_version}-${artifact_version}"
+	if ("${cosmicmod_releasemode}" != "RELEASE")
+		jarVersion = "${baseVersion}.${cosmicmod_releasemode}"
+} else {
+	jarVersion = "${baseVersion}.${project.buildInfo.buildNum}"
+}
+version = "${buildProps.minecraft_version}-${jarVersion}"
 
 task incrementBuildnumber(type:Copy){
 	if ("${cosmicmod_releasemode}" != "null") {
-		ant.propertyfile(file: configFile) {
-			entry(key: 'mod_revision', type: 'int', operation: '+', value: 001)
+		ant.propertyfile(file: versionPropsFile) {
+			entry(key: 'revision', type: 'int', operation: '+', value: 001)
 		}
 	}
 }
@@ -66,15 +71,16 @@ compileJava.dependsOn incrementBuildnumber
 
 sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
+	sourceCompatibility = targetCompatibility = '1.8'
 }
 
 minecraft {
-    version = config.forge_version
-    runDir = "run"
-    replace "${version}", project.version
-    mappings = config.mappings
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+	version = "${buildProps.forge_version}"
+	runDir = "run"
+	replace "@jar_fingerprint@", "${buildProps.signature_sha1}"
+	replace "@version@", "${baseVersion}"
+	mappings = "${buildProps.mcp_mappings}"
+	// makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
 }
 
 dependencies {
@@ -83,48 +89,65 @@ dependencies {
 }
 
 processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
+	// this will ensure that this task is redone when the versions change.
+	inputs.property "version", baseVersion
+	inputs.property "mcversion", project.minecraft.version
 
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        // replace version and mcversion
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-        
-    // copy everything else except the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+	// replace stuff in mcmod.info, nothing else
+	from(sourceSets.main.resources.srcDirs) {
+		include 'mcmod.info'
+				
+		// replace version and mcversion
+		expand 'version':baseVersion, 'mcversion':project.minecraft.version
+	}
+		
+	// copy everything else except the mcmod.info
+	from(sourceSets.main.resources.srcDirs) {
+		exclude 'mcmod.info'
+	}
 }
 
 jar {
-    manifest {
-        // AT's here
-    }
-    finalizedBy reobfJar
+	manifest {
+		// AT's here
+	}
+	finalizedBy reobfJar
 }
 
 // Create deobf dev jars
 task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'deobf'
+	from sourceSets.main.output
+	classifier = 'deobf'
 	manifest {
-        // AT's here
-    }
+		// AT's here
+	}
 }
 
 task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier = 'sources'
+	from sourceSets.main.allJava
+	classifier = 'sources'
 }
 
+String keyStorePass = new File('X:/CosmicDan_keystore_Minecraft-Mods_password').text
+task signJar(type: SignJar, dependsOn: reobfJar) {
+	// Skips if the keyStore property is missing.
+	onlyIf {
+		keyStorePass != "null"
+	}
+
+	keyStore = buildProps.keyStore
+	alias = buildProps.keyStoreAlias
+	storePass = keyStorePass
+	keyPass = keyStorePass
+	inputFile = jar.archivePath
+	outputFile = jar.archivePath
+}
+
+build.dependsOn signJar
+
 artifacts {
-    archives deobfJar
-    archives sourcesJar
+	archives deobfJar
+	archives sourcesJar
 }
 
 lombok {
