@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
  * The Mirror classes are used as helpers for vanilla code reflection operations.
  * See each Mirror implementation for details.
  */
-@Log4j2(topic =  "CosmicLib/MirrorBase")
+@Log4j2(topic = "CosmicLib/MirrorBase")
 abstract class MirrorBase {
 	/**
 	 * Where the expensive reflection stuff happens - finding the target method/field/whatever, setting it accessible,

@@ -1,0 +1,16 @@
+[
+{
+  "modid": "cosmiclib",
+  "name": "CosmicLib",
+  "description": "Shared capabilities and utilities for CosmicDan's mods",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["CosmicDan"],
+  "credits": "Forge/FML and Mojang of course",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]

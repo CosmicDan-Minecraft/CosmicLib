@@ -1,17 +1,24 @@
 package com.cosmicdan.cosmiclib.reflection;
 
 import com.cosmicdan.cosmiclib.obfuscation.ObfuscatedString;
+import com.esotericsoftware.reflectasm.FieldAccess;
 import lombok.extern.log4j.Log4j2;
 
 import java.lang.reflect.Field;
 
-@Log4j2(topic =  "CosmicLib/FieldMirror")
+@Log4j2(topic = "CosmicLib/FieldMirror")
 public class FieldMirror extends MirrorBase {
 	private final ObfuscatedString fieldName;
 	private final Class<?> fieldClass;
 
-	private Field field = null;
+	private FieldAccess fieldAccess = null;
+	private int fieldIndex;
 
+	/**
+	 * Must NOT be private - use AT if necessary!
+	 * @param fieldName
+	 * @param fieldClass
+	 */
 	public FieldMirror(ObfuscatedString fieldName, Class<?> fieldClass) {
 		this.fieldName = fieldName;
 		this.fieldClass = fieldClass;
@@ -19,13 +26,9 @@ public class FieldMirror extends MirrorBase {
 
 	@Override
 	public final void init() {
-		if (null == field) {
-			try {
-				field = fieldClass.getDeclaredField(fieldName.get());
-				field.setAccessible(true);
-			} catch (NoSuchFieldException e) {
-				logException(log, e, "Field not found: " + fieldClass.getName() + '#' + fieldName);
-			}
+		if (null == fieldAccess) {
+			fieldAccess = FieldAccess.get(fieldClass);
+			fieldIndex = fieldAccess.getIndex(fieldName.get());
 		}
 	}
 
@@ -37,14 +40,8 @@ public class FieldMirror extends MirrorBase {
 	 */
 	public final boolean set(Object fieldOwner, Object fieldValue) {
 		init();
-		boolean retVal = false;
-		try {
-			field.set(fieldOwner, fieldValue);
-			retVal = true;
-		} catch (IllegalAccessException e) {
-			logException(log, e, "Illegal access to field; cannot set: " + fieldOwner.getClass().getName() + '#' + field.getName());
-		}
-		return retVal;
+		fieldAccess.set(fieldOwner, fieldIndex, fieldValue);
+		return true;
 	}
 
 	/**
@@ -54,12 +51,6 @@ public class FieldMirror extends MirrorBase {
 	 */
 	public final Object get(Object fieldOwner) {
 		init();
-		Object retVal = null;
-		try {
-			retVal = field.get(fieldOwner);
-		} catch (IllegalAccessException e) {
-			logException(log, e, "Illegal access to field; cannot get: " + fieldOwner.getClass().getName() + '#' + field.getName());
-		}
-		return retVal;
+		return fieldAccess.get(fieldOwner, fieldIndex);
 	}
 }
