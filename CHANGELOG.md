@@ -1,4 +1,4 @@
-# 0.3.0
+# 0.3.x
 
 ## Requirements:
 
@@ -6,10 +6,16 @@
 
 ## Changes:
 
+### 0.3.0
+
 * Improve performance of Reflection helpers (thanks to ReflectASM library)
 * Add Coremod/ASM helpers
 * Fix minute roll-over in Timekeeper service
 
+
+### 0.3.2
+
+- Fix Coremod/ASM related helpers
 
 
 # 0.2.0
