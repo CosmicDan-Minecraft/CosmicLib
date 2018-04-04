@@ -1,6 +1,6 @@
 package com.cosmicdan.cosmiclib.gamedata;
 
-import cc.redberry.libdivide4j.FastDivision;
+import com.cosmicdan.shadowed.libdivide4j.FastDivision;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.client.Minecraft;

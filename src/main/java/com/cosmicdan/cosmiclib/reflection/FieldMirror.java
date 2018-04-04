@@ -15,7 +15,7 @@ public class FieldMirror extends MirrorBase {
 	private int fieldIndex;
 
 	/**
-	 * Must NOT be private - use AT if necessary!
+	 * Must be public - use AT if necessary!
 	 * @param fieldName
 	 * @param fieldClass
 	 */

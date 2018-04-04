@@ -1,6 +1,6 @@
 /*
  * CosmicDan's Mods build script
- * Thanks to SlimeKnights and aidancbrady for references
+ * Additional credits to SlimeKnights, aidancbrady and Choonster
  * TODO: Adapt the script to be more universal (i.e. working with contributors via only build.properties changes - not just CosmicDan's main dev machine)
  */
 
@@ -16,6 +16,7 @@ buildscript {
 
 plugins {
 	id 'io.franzbecker.gradle-lombok' version '1.10'
+	id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
 apply plugin: 'net.minecraftforge.gradle.forge'
@@ -44,6 +45,7 @@ def propGetter(inputProp) {
 
 ext.buildProps = propGetter("build.properties")
 ext.versionProps = propGetter("version.properties")
+ext.cosmiclibVersionProps = propGetter("../CosmicLib/version.properties")
 
 group = buildProps.group_prefix + '.' + buildProps.modid
 ext.groupAsPath = group.replace(".", "/")
@@ -57,8 +59,6 @@ ext.accessTransformerName = buildProps.modid + "_at.cfg"
 ext.accessTransformerPath = "src/main/resources/META-INF/${accessTransformerName}"
 ext.accessTransformerFound = false
 if (file(accessTransformerPath).exists()) { ext.accessTransformerFound = true }
-ext.coreModCompanionExists = false
-if (file("src_cmc/").exists()) { ext.coreModCompanionExists = true }
 
 
 
@@ -93,7 +93,6 @@ if (accessTransformerFound) {
 	project.logger.lifecycle("	[~] accessTransformerName: " + accessTransformerName)
 	project.logger.lifecycle("	[~] accessTransformerPath: " + accessTransformerPath)
 }
-project.logger.lifecycle("[i] coreModCompanionExists: " + coreModCompanionExists)
 project.logger.lifecycle("[i] Keystore location: " + buildProps.keyStore)
 project.logger.lifecycle("[i] Keystore alias: " + buildProps.keyStoreAlias)
 project.logger.lifecycle("[i] Keystore password file: " + buildProps.keyStorePasswordFile)
@@ -159,10 +158,13 @@ minecraft {
 	mappings = "${buildProps.mcp_mappings}"
 	makeObfSourceJar = false
 	
+	replace "@jar_fingerprint@", "${buildProps.signature_sha1}"
+	replace "@version@", "${baseVersion}"
+	
 	project.logger.lifecycle("")
 	project.logger.lifecycle("[i] Parsing IDE config...")
 	if (coreModFound) {
-		project.logger.lifecycle("	[~] CoreModCompanion detected; plugin found for IDE's JVM args:")
+		project.logger.lifecycle("	[~] FakeCoreMod present; plugin found for IDE's JVM args:")
 		project.logger.lifecycle("	    ${coreModPluginClass}")
 		clientJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
 		serverJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
@@ -189,16 +191,32 @@ dependencies {
 	}
 }
 
+
+
+/////////////////////////////////////////
+// Build task definitions
+/////////////////////////////////////////
+
+// shadow ReflectASM to prevent package collision. Choonster saves the day yet again!
+shadowJar {
+    dependencies {
+        include(
+			dependency("com.esotericsoftware.reflectasm:reflectasm:.*")
+		)
+    }
+
+    relocate 'com.esotericsoftware.reflectasm', 'com.cosmicdan.shadowed.reflectasm'
+    classifier '' // Replace the default JAR
+}
+
+reobf {
+    shadowJar {} // Reobfuscate the shadowed JAR
+}
+
 processResources {
 	// this will ensure that this task is redone when the versions change.
 	inputs.property "version", baseVersion
 	inputs.property "mcversion", project.minecraft.version
-
-	from(sourceSets.main.resources.srcDirs) {
-		include 'Main.java', 'ModConfig.java'
-		expand	'@jar_fingerprint@': buildProps.signature_sha1,
-				'@version@': baseVersion
-	}
 	
 	// replace stuff in mcmod.info, nothing else
 	from(sourceSets.main.resources.srcDirs) {
@@ -211,20 +229,20 @@ processResources {
 	// copy everything else except the mcmod.info and coremod
 	from(sourceSets.main.resources.srcDirs) {
 		exclude 'mcmod.info'
-		exclude groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
 	}
 }
-
-
-
-/////////////////////////////////////////
-// Build task definitions
-/////////////////////////////////////////
 
 // Main jar
 jar {
 	archiveName = "${project.name}___FULL-DO-NOT-DISTRIB___${project.version}.jar"
 	finalizedBy reobfJar
+	
+	manifest {
+		attributes (
+			'FMLCorePlugin': coreModPluginClass,
+			'FMLCorePluginContainsFMLMod': 'true'
+		)
+	}
 }
 
 // Deobfuscated (dev) jar
@@ -260,7 +278,7 @@ def signJars(jarToSign) {
 	}
 }
 
-// Distrib or "release" (based on Main jar but with coremod, if any, stripped out)
+// Distrib or "release"
 task mainJar(type: Jar) {
 	archiveName = "${project.name}-${project.version}.jar"
 	classifier "main"
@@ -270,35 +288,6 @@ task mainJar(type: Jar) {
 		if (accessTransformerFound) {
 			attributes 'FMLAT': accessTransformerName
 		}
-	}
-	
-	from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
-		exclude groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
-	}
-}
-
-// CoreModCompanion jar
-task cmcJar(type: Jar) {
-	archiveName = "${project.name}-${project.version}-CoreModCompanion.jar"
-	classifier "cmc"
-	dependsOn "extractAnnotationsJar"
-	
-	manifest {
-		attributes 'FMLCorePlugin': coreModPluginClass,
-                   'FMLCorePluginContainsFMLMod': 'true'
-	}
-	
-	from('src_cmc') {
-		include '*'
-		expand 'version':baseVersion, 'mcversion':project.minecraft.version
-	}
-
-	// Copy CoreMod and non-standard metadata (e.g. FML asm json)
-	from zipTree(jar.outputs.getFiles().getSingleFile()).matching {
-		include groupAsPath + '/' + buildProps.coremod_package_suffix.replace(".", "/") + '/**'
-		include 'META-INF/**'
-		exclude 'META-INF/*.cfg'
-		exclude 'META-INF/MANIFEST.MF'
 	}
 }
 
@@ -310,20 +299,10 @@ artifacts {
 	archives deobfJar
 	archives sourceDeobfJar
 	archives mainJar
-	if (coreModFound) {
-		if (coreModCompanionExists) {
-			archives cmcJar
-		} else {
-			log.error("[!] A coremod plugin is found but the src_cmc folder does not. CoreModCompanion task NOT performed; coremod plugin kept bundled in main mod. This is bad!")
-		}
-	}
 }
 
 build {
 	dependsOn signJars(mainJar)
-	if (coreModFound && coreModCompanionExists) {
-		dependsOn signJars(cmcJar)
-	}
 }
 
 lombok {

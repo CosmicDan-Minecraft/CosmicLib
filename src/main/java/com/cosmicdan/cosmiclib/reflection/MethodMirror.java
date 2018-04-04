@@ -18,7 +18,7 @@ public class MethodMirror extends MirrorBase {
 	private int methodIndex;
 
 	/**
-	 * Must NOT be private - use AT if necessary!
+	 * Must be public - use AT if necessary!
 	 * @param methodName
 	 * @param methodClass
 	 * @param parameterTypes

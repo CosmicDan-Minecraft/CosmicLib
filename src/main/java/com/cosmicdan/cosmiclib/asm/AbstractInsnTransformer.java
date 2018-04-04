@@ -109,7 +109,8 @@ public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implem
 			log.info("    Reason: " + hookReason);
 		} // else log error? Nah, silently fail I guess...
 
-		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		//ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		classNode.accept(writer);
 		return writer.toByteArray();
 	}

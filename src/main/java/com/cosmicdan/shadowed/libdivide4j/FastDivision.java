@@ -1,4 +1,4 @@
-package cc.redberry.libdivide4j;
+package com.cosmicdan.shadowed.libdivide4j;
 
 /**
  * Fast integer division and modulo operation (both signed and unsigned).
