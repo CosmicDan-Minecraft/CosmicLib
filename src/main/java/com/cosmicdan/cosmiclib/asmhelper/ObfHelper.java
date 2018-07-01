@@ -6,13 +6,14 @@ import java.util.regex.Pattern;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 import net.minecraftforge.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 
+@SuppressWarnings("ALL")
 public class ObfHelper
 {
     private static Boolean obfuscated = null;
     private static Boolean runsAfterDeobfRemapper = null;
 
     /**
-     * Can be initialized by a core mod in {@link cpw.mods.fml.relauncher.IFMLLoadingPlugin#injectData} by 
+     * Can be initialized by a core mod in {@link net.minecraftforge.fml.relauncher.IFMLLoadingPlugin#injectData} by
      * using the value of "runtimeDeobfuscationEnabled" to
      * avoid the class loader lookup in isObfuscated.<br>
      * <br>
@@ -31,7 +32,7 @@ public class ObfHelper
 
     /**
      * Should be initialized to true by a core mod that uses SortingIndex > 1000
-     * (e.g. in {@link cpw.mods.fml.relauncher.IFMLLoadingPlugin#injectData}).
+     * (e.g. in {@link net.minecraftforge.fml.relauncher.IFMLLoadingPlugin#injectData}).
      */
     public static void setRunsAfterDeobfRemapper(boolean runsAfterDeobfRemapper)
     {

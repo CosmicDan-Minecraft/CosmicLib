@@ -19,7 +19,7 @@ abstract class MirrorBase {
 	/**
 	 * Helper method for logging reflection exceptions
 	 */
-	static void logException(Logger logIn, Exception e, String msg) {
+	static void throwError(Logger logIn, Exception e, String msg) {
 		logIn.error(msg);
 		throw new RuntimeException(e);
 	}

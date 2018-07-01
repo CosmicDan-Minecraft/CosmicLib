@@ -11,6 +11,8 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
+import javax.annotation.PropertyKey;
+
 @SuppressWarnings({"StaticNonFinalField", "WeakerAccess"})
 @Log4j2(topic = "CosmicLib")
 @Mod(name = ModConstants.MODNAME, modid = ModConstants.MODID, version = ModConstants.VERSION, certificateFingerprint = "@jar_fingerprint@")
@@ -40,6 +42,6 @@ public class Main {
 
 	@Mod.EventHandler
 	public void onFingerprintViolation(FMLFingerprintViolationEvent event) {
-		log.warn("Invalid fingerprint detected! The file " + event.getSource().getName() + " may have been tampered with. This mod will NOT be supported by CosmicDan.");
+		log.warn("Invalid fingerprint detected! The file {} may have been tampered with. This mod will NOT be supported by CosmicDan.", event.getSource().getName());
 	}
 }

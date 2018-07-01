@@ -10,6 +10,7 @@ public class BlockAndMeta {
 	public final Block block;
 	public final int meta;
 
+	@SuppressWarnings("deprecation")
 	public IBlockState getAsState() {
 		return block.getStateFromMeta(meta);
 	}

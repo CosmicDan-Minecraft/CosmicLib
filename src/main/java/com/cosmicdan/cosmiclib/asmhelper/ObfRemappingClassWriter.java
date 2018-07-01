@@ -6,6 +6,7 @@ import org.objectweb.asm.ClassWriter;
  * {@link ClassWriter#getCommonSuperClass} needed to be overwritten 
  * in order to avoid ClassNotFoundExceptions in obfuscated environments.
  */
+@SuppressWarnings("ALL")
 public class ObfRemappingClassWriter extends ClassWriter
 {
     public ObfRemappingClassWriter(int flags)

@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+@SuppressWarnings("ALL")
 public class InsnComparator implements Comparator<AbstractInsnNode>, Serializable
 {
     private static final long serialVersionUID = 408241651446425342L;
@@ -34,7 +35,7 @@ public class InsnComparator implements Comparator<AbstractInsnNode>, Serializabl
         if (a == b)
             return true;
 
-        if (a == null || b == null)
+        if (null == a || null == b)
             return false;
 
         if (a.equals(b))
@@ -101,7 +102,7 @@ public class InsnComparator implements Comparator<AbstractInsnNode>, Serializabl
 
     private boolean intValuesMatch(int a, int b)
     {
-        return a == b || a == INT_WILDCARD || b == INT_WILDCARD;
+        return a == b || INT_WILDCARD == a || INT_WILDCARD == b;
     }
 
     private boolean valuesMatch(Object a, Object b)

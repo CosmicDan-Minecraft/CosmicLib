@@ -63,6 +63,26 @@ public final class Timekeeper {
 		return (hourInDay + 6) - ((17 < hourInDay) ? 24 : 0);
 	}
 
+	/**
+	 * Get a nicely-formatted time String, in format of e.g. 10:30pm
+	 */
+	public String getNiceTimeString(boolean militaryTime) {
+		final String minutesPadded = String.format("%02d", getMinutesSinceHourElapsed());
+		int hourOfDay = calcHourOfDay();
+		String suffix = "";
+		if (!militaryTime) {
+			if (12 <= hourOfDay) {
+				suffix = "pm";
+				hourOfDay -= 12;
+			} else {
+				suffix = "am";
+			}
+			if (0 == hourOfDay)
+				hourOfDay = 12;
+		}
+		return hourOfDay + ":" + minutesPadded + suffix;
+	}
+
 	@SubscribeEvent
 	public void onServerTick(TickEvent.WorldTickEvent event) {
 		if ((null != event.world) && (TickEvent.Phase.END == event.phase)) {

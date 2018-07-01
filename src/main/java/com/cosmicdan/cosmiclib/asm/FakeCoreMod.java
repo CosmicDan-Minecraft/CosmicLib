@@ -10,9 +10,9 @@ import java.util.Map;
  * I don't know of any other way to do this, I tried using ITweaker but meh
  * @author Daniel 'CosmicDan' Connolly
  */
-@IFMLLoadingPlugin.Name(value = "CosmicLibFakeCoreMod")
+@IFMLLoadingPlugin.Name("CosmicLibFakeCoreMod")
 //@IFMLLoadingPlugin.MCVersion(value = "1.12.2")
-@IFMLLoadingPlugin.SortingIndex(value = 1) // How early your core mod is called - Use > 1000 to work with srg names
+@IFMLLoadingPlugin.SortingIndex(1) // How early your core mod is called - Use > 1000 to work with srg names
 @Log4j2(topic = "CosmicLib/FakeCoreMod")
 public class FakeCoreMod implements IFMLLoadingPlugin {
 
@@ -24,7 +24,7 @@ public class FakeCoreMod implements IFMLLoadingPlugin {
 	public String[] getASMTransformerClass() {
 		log.info("[i] FakeCoreMod loading ASM helper classes...");
 		try {
-			for (String className : CLASSES) {
+			for (final String className : CLASSES) {
 				Class.forName(className);
 			}
 		} catch (ClassNotFoundException e) {

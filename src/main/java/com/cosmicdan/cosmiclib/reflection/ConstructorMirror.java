@@ -39,9 +39,9 @@ public class ConstructorMirror extends MirrorBase {
 					constructorAccess = ConstructorAccess.get(Class.forName(className));
 				}
 			} catch (ClassNotFoundException e) {
-				logException(log, e, "Class not found: " + className);
+				throwError(log, e, "Class not found: " + className);
 			} catch (NoSuchMethodException e) {
-				logException(log, e, "Constructor not found with parameters: " + Arrays.toString(parameterTypes));
+				throwError(log, e, "Constructor not found with parameters: " + Arrays.toString(parameterTypes));
 			}
 		}
 	}
@@ -55,7 +55,6 @@ public class ConstructorMirror extends MirrorBase {
 	public final Object construct(Object classOwner, Object... classParams) {
 		init();
 		Object retVal = null;
-		String constructorName = "";
 		try {
 			// faster RefelctASM mode
 			if (null == classOwner) {
@@ -70,13 +69,13 @@ public class ConstructorMirror extends MirrorBase {
 				);
 			}
 		} catch (InstantiationException e) {
-			logException(log, e, "Failed instantiating class (might be an abstract class?): " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
+			throwError(log, e, "Failed instantiating class (might be an abstract class?): " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
 		} catch (IllegalAccessException e) {
-			logException(log, e, "Illegal access to constructor, cannot instantiate: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
+			throwError(log, e, "Illegal access to constructor, cannot instantiate: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
 		} catch (InvocationTargetException e) {
-			logException(log, e, "Instantiated class threw an exception: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
+			throwError(log, e, "Instantiated class threw an exception: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
 		} catch (IllegalArgumentException e) {
-			logException(log, e, "Instantiated class with wrong number of arguments: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
+			throwError(log, e, "Instantiated class with wrong number of arguments: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
 		}
 
 		return retVal;

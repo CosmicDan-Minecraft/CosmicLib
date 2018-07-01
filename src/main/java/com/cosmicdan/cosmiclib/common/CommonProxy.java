@@ -2,6 +2,7 @@ package com.cosmicdan.cosmiclib.common;
 
 import com.cosmicdan.cosmiclib.gamedata.Timekeeper;
 import lombok.extern.log4j.Log4j2;
+import net.minecraft.item.Item;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -33,4 +34,6 @@ public class CommonProxy {
 	public void postInit(FMLPostInitializationEvent event) {
 
 	}
+
+	public void registerItemInventoryRenderer(String modid, Item item, int meta, String id) {}
 }

@@ -17,6 +17,10 @@
 
 - Fix Coremod/ASM related helpers
 
+### 0.3.3
+
+* Misc. updates for SleepingOverhaul
+
 
 # 0.2.0
 

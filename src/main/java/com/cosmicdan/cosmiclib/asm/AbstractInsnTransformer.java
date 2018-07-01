@@ -24,10 +24,10 @@ import org.objectweb.asm.util.TraceMethodVisitor;
  */
 @Log4j2(topic = "CosmicLib/AbstractInsnTransformer")
 public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implements IClassTransformer  {
-	String targetClass;
-	String targetMethod;
-	String targetDesc;
-	String hookReason;
+	private String targetClass;
+	private final String targetMethod;
+	private final String targetDesc;
+	private final String hookReason;
 
 	public AbstractInsnTransformer() {
 		targetClass = getTargetClass();
@@ -64,13 +64,13 @@ public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implem
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] classBytes) {
 		if (transformedName.equals(targetClass))
-			return patchClass(classBytes, true);
+			return patchClass(classBytes);
 		return classBytes;
 	}
 
-	private byte[] patchClass(byte[] classBytes, boolean dev) {
+	private byte[] patchClass(byte[] classBytes) {
 		ClassNode classNode = new ClassNode();
-		ClassReader classReader = new ClassReader(classBytes);
+		final ClassReader classReader = new ClassReader(classBytes);
 		classReader.accept(classNode, 0);
 		boolean success = false;
 
@@ -79,17 +79,17 @@ public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implem
 			success = true;
 		}
 
-		if ((targetMethod != null) && (targetDesc != null)) {
+		if ((null != targetMethod) && (null != targetDesc)) {
 			success = false;
-			Iterator<MethodNode> methods = classNode.methods.iterator();
+			final Iterator<MethodNode> methods = classNode.methods.iterator();
 			while(methods.hasNext()) {
-				MethodNode m = methods.next();
+				final MethodNode m = methods.next();
 				if ((m.name.equals(targetMethod) && m.desc.equals(targetDesc))) {
 					// DEBUG
 					//dumpMethodAsmToText(m, "E:/TEMP/before.txt");
 
-					T targetNode = getTargetNode(m);
-					InsnList toInject = injectOps(targetNode);
+					final T targetNode = getTargetNode(m);
+					final InsnList toInject = injectOps(targetNode);
 					if (shouldInjectOpsBeforeNode())
 						m.instructions.insertBefore(targetNode, toInject);
 					else
@@ -110,29 +110,29 @@ public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implem
 		} // else log error? Nah, silently fail I guess...
 
 		//ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		final ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		classNode.accept(writer);
 		return writer.toByteArray();
 	}
 
 	// ASM debug dumping
 	// Thanks to HXSP1947@StackOverflow
-	private static Printer printer = new Textifier();
-	private static TraceMethodVisitor mp = new TraceMethodVisitor(printer);
+	private static final Printer printer = new Textifier();
+	private static final TraceMethodVisitor mp = new TraceMethodVisitor(printer);
 
 	public static void dumpMethodAsmToText(MethodNode m, String outputTextFile) {
 		try {
-			PrintWriter outputFile = new PrintWriter(outputTextFile);
-			for (AbstractInsnNode node : m.instructions.toArray()) {
+			final PrintWriter outputFile = new PrintWriter(outputTextFile);
+			for (final AbstractInsnNode node : m.instructions.toArray()) {
 				outputFile.append(insnToString(node));
 			}
 			outputFile.flush();
 		} catch (FileNotFoundException e) {}
 	}
 
-	public static String insnToString(AbstractInsnNode insn){
+	private static String insnToString(AbstractInsnNode insn){
 		insn.accept(mp);
-		StringWriter sw = new StringWriter();
+		final StringWriter sw = new StringWriter();
 		printer.print(new PrintWriter(sw));
 		printer.getText().clear();
 		return sw.toString();

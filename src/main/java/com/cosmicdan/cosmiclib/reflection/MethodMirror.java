@@ -32,8 +32,12 @@ public class MethodMirror extends MirrorBase {
 	@Override
 	public final void init() {
 		if (null == methodAccess) {
-			methodAccess = MethodAccess.get(methodClass);
-			methodIndex = methodAccess.getIndex(methodName.get(), parameterTypes);
+			try {
+				methodAccess = MethodAccess.get(methodClass);
+				methodIndex = methodAccess.getIndex(methodName.get(), parameterTypes);
+			} catch (RuntimeException exception) {
+				throwError(log, exception, "Could find method: " + methodClass.getName() + '#' + methodName + '(' + parameterTypes.toString() + ')');
+			}
 		}
 	}
 

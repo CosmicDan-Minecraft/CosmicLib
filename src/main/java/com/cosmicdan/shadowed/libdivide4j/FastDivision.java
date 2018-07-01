@@ -21,6 +21,7 @@ package com.cosmicdan.shadowed.libdivide4j;
  * @author ridiculousfish (http://github.com/ridiculousfish/libdivide)
  * @author Stanislav Poslavsky
  */
+@SuppressWarnings("ALL")
 public final class FastDivision {
     private FastDivision() {}
 

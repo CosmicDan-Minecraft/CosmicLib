@@ -27,8 +27,12 @@ public class FieldMirror extends MirrorBase {
 	@Override
 	public final void init() {
 		if (null == fieldAccess) {
-			fieldAccess = FieldAccess.get(fieldClass);
-			fieldIndex = fieldAccess.getIndex(fieldName.get());
+			try {
+				fieldAccess = FieldAccess.get(fieldClass);
+				fieldIndex = fieldAccess.getIndex(fieldName.get());
+			} catch (RuntimeException exception) {
+				throwError(log, exception, "Could find field: " + fieldClass.getName() + '#' + fieldName);
+			}
 		}
 	}
 
@@ -38,10 +42,9 @@ public class FieldMirror extends MirrorBase {
 	 * @param fieldValue The value to set
 	 * @return True if successful, false if not
 	 */
-	public final boolean set(Object fieldOwner, Object fieldValue) {
+	public final void set(Object fieldOwner, Object fieldValue) {
 		init();
 		fieldAccess.set(fieldOwner, fieldIndex, fieldValue);
-		return true;
 	}
 
 	/**

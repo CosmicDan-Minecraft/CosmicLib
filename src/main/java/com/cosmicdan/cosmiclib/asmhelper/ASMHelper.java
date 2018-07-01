@@ -29,6 +29,7 @@ import org.objectweb.asm.util.TraceMethodVisitor;
 /**
  * @author UNKNOWN. PLEASE CONTACT ME FOR ATTRIBUTION!
  */
+@SuppressWarnings("ALL")
 public class ASMHelper
 {
     private static Boolean isCauldron = null;
