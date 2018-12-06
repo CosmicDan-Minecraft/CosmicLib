@@ -28,6 +28,8 @@ public final class Timekeeper {
 	private static final FastDivision.Magic TICKS_PER_DAY_MAGIC = FastDivision.magicUnsigned((long) TICKS_PER_DAY);
 	private static final double TICKS_PER_HOUR = 1000.0;
 	private static final FastDivision.Magic TICKS_PER_HOUR_MAGIC = FastDivision.magicUnsigned((long) TICKS_PER_HOUR);
+	private static final int MOONPHASES = 8;
+	private static final FastDivision.Magic MOONPHASES_MAGIC = FastDivision.magicUnsigned(MOONPHASES);
 
 	private static final int TICKER_MAX = 10;
 
@@ -46,6 +48,8 @@ public final class Timekeeper {
 	// These are all set by timekeeper thread and gotten (and get'd) via main thread
 	/** Return current day number for the world. Zero-based. */
 	@Getter private volatile int worldDayCount;
+	/** Return current moon phase number for the world. Might not be much faster than the vanilla getMoonPhase, but ensures synchronization. */
+	@Getter private volatile int worldMoonPhase;
 	/** Get the number of ticks that have passed on this day. */
 	@Getter private volatile int dayTicksElapsed;
 	/** Get current in-game hour of the day. Zero-based. Use {@link #calcHourOfDay()} to get a clock-adjusted hour. */
@@ -66,8 +70,8 @@ public final class Timekeeper {
 	/**
 	 * Get a nicely-formatted time String, in format of e.g. 10:30pm
 	 */
-	public String getNiceTimeString(boolean militaryTime) {
-		final String minutesPadded = String.format("%02d", getMinutesSinceHourElapsed());
+	public String getNiceTimeString(final boolean militaryTime) {
+		final String minutesPadded = String.format("%02d", this.minutesSinceHourElapsed);
 		int hourOfDay = calcHourOfDay();
 		String suffix = "";
 		if (!militaryTime) {
@@ -84,14 +88,14 @@ public final class Timekeeper {
 	}
 
 	@SubscribeEvent
-	public void onServerTick(TickEvent.WorldTickEvent event) {
+	public void onServerTick(final TickEvent.WorldTickEvent event) {
 		if ((null != event.world) && (TickEvent.Phase.END == event.phase)) {
 			tick(event.world.getWorldTime());
 		}
 	}
 
 	@SubscribeEvent
-	public void onClientTick(TickEvent.ClientTickEvent event) {
+	public void onClientTick(final TickEvent.ClientTickEvent event) {
 		// for clients (both SSP and SMP since we want to keep a client-side timekeeper too)
 		if ((null != Minecraft.getMinecraft().world) && (TickEvent.Phase.END == event.phase)) {
 			tick(Minecraft.getMinecraft().world.getWorldTime());
@@ -99,7 +103,7 @@ public final class Timekeeper {
 	}
 
 	@SubscribeEvent
-	public void onWorldLoad(WorldEvent.Load event) {
+	public void onWorldLoad(final WorldEvent.Load event) {
 		if (0 == event.getWorld().provider.getDimension()) {
 			final boolean isRemote = event.getWorld().isRemote;
 			final ScheduledExecutorService timekeeperSchedule = isRemote ? timekeeperScheduleClient : timekeeperScheduleServer;
@@ -112,7 +116,7 @@ public final class Timekeeper {
 	}
 
 	@SubscribeEvent
-	public void onWorldUnload(WorldEvent.Unload event) {
+	public void onWorldUnload(final WorldEvent.Unload event) {
 		if (0 == event.getWorld().provider.getDimension()) {
 			if (event.getWorld().isRemote) {
 				if (null != timekeeperTaskClient)
@@ -131,7 +135,7 @@ public final class Timekeeper {
 		worldTimeCached = -1L;
 	}
 
-	private void tick(long worldTime) {
+	private void tick(final long worldTime) {
 		if (worldTime == this.worldTimeCached)
 			// Only tick once per... well, tick. This is mostly for integrated server (SSP)
 			return;
@@ -156,6 +160,10 @@ public final class Timekeeper {
 		private long worldTimeLast = 0L;
 		private int worldDayCountCalc = 0;
 		private int worldDayCountCalcLast = 0;
+		private long worldMoonPhaseInterimCalc = 0;
+		private long worldMoonPhaseInterimCalcLast = 0;
+		private int worldMoonPhaseCalc = 0;
+		private int worldMoonPhaseCalcLast = 0;
 		private int dayTicksElapsedCalc = 0;
 		private int dayTicksElapsedCalcLast = 0;
 		private int dayHoursRawElapsedCalc = 0;
@@ -171,7 +179,6 @@ public final class Timekeeper {
 			if (Timekeeper.this.worldTimeCached == worldTimeLast)
 				return;
 
-
 			// main thread has updated world time, let's set new values if needed
 			worldTimeLast = Timekeeper.this.worldTimeCached;
 
@@ -185,6 +192,20 @@ public final class Timekeeper {
 					worldDayCountCalcLast = worldDayCountCalc;
 					Timekeeper.this.worldDayCount = worldDayCountCalcLast;
 				}
+
+				//worldMoonPhaseCalc = (int) ((((worldTimeLast / 24000L) % 8L) + 8L) % 8);
+				//worldMoonPhaseCalc = (int) (((worldDayCountCalc % 8L) + 8L) % 8);
+
+				worldMoonPhaseInterimCalc = FastDivision.remainderUnsignedFast(worldDayCountCalc, MOONPHASES_MAGIC);
+				if (worldMoonPhaseInterimCalc != worldMoonPhaseInterimCalcLast) {
+					worldMoonPhaseInterimCalcLast = worldMoonPhaseInterimCalc;
+					worldMoonPhaseCalc = (int) FastDivision.remainderUnsignedFast((worldMoonPhaseInterimCalcLast + MOONPHASES), MOONPHASES_MAGIC);
+					if (worldMoonPhaseCalc != worldMoonPhaseCalcLast) {
+						worldMoonPhaseCalcLast = worldMoonPhaseCalc;
+						Timekeeper.this.worldMoonPhase = worldMoonPhaseCalcLast;
+					}
+				}
+				//worldMoonPhaseCalc = (int) FastDivision.remainderUnsignedFast()
 
 				// dayTicksElapsed
 				dayTicksElapsedCalc = (int) (worldTimeLast - (worldDayCountCalc * TICKS_PER_DAY));
@@ -210,7 +231,7 @@ public final class Timekeeper {
 
 				// minutesSinceHourElapsed
 				//dayMinutesPastHourElapsedCalc = (int) (dayTicksPastHourElapsedCalc * 60 / TICKS_PER_HOUR);
-				dayMinutesPastHourElapsedCalc = (int) (FastDivision.divideUnsignedFast(dayTicksPastHourElapsedCalc * 60, TICKS_PER_HOUR_MAGIC));
+				dayMinutesPastHourElapsedCalc = (int) (FastDivision.divideUnsignedFast(dayTicksPastHourElapsedCalc * 60L, TICKS_PER_HOUR_MAGIC));
 				if (dayMinutesPastHourElapsedCalc != dayMinutesPastHourElapsedCalcLast) {
 					dayMinutesPastHourElapsedCalcLast = dayMinutesPastHourElapsedCalc;
 					Timekeeper.this.minutesSinceHourElapsed = dayMinutesPastHourElapsedCalcLast;

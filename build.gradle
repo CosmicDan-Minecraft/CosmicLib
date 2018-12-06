@@ -15,7 +15,7 @@ buildscript {
 }
 
 plugins {
-	id 'io.franzbecker.gradle-lombok' version '1.10'
+	id 'io.franzbecker.gradle-lombok' version '1.14'
 	id 'com.github.johnrengelman.shadow' version '1.2.4'
 }
 
@@ -154,31 +154,30 @@ minecraft {
 	project.logger.lifecycle("")
 	project.logger.lifecycle("[i] Parsing IDE config...")
 	if (coreModFound) {
-		project.logger.lifecycle("	[~] FakeCoreMod present; plugin found for IDE's JVM args:")
-		project.logger.lifecycle("	    ${coreModPluginClass}")
+		project.logger.lifecycle("    [~] FakeCoreMod present; plugin found for IDE's JVM args:")
+		project.logger.lifecycle("        ${coreModPluginClass}")
 		clientJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
 		serverJvmArgs += "-Dfml.coreMods.load=${coreModPluginClass}"
 	} else {
-		project.logger.lifecycle("	[~] No CoreModCompanion found")
+		project.logger.lifecycle("    [~] No CoreModCompanion found")
 	}
 	
 	if (buildProps.username != "null") {
-		project.logger.lifecycle("	[~] Username found for IDE's run args:")
-		project.logger.lifecycle("	    ${buildProps.username}")
+		project.logger.lifecycle("    [~] Username found for IDE's run args:")
+		project.logger.lifecycle("        ${buildProps.username}")
 		clientRunArgs += "--username ${buildProps.username}"
 	} else {
-		project.logger.lifecycle("	[~] No username set. Will be random!")
+		project.logger.lifecycle("    [~] No username set. Will be random!")
 	}
 	project.logger.lifecycle("")
 }
 
 dependencies {
-	compileOnly "org.projectlombok:lombok:1.16.18"
+	compileOnly "org.projectlombok:lombok:1.18.0"
+	compile 'com.fasterxml.jackson.core:jackson-core:2.9.5'
+	compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.5'
+	//compile 'com.fasterxml.jackson.core:jackson-databind:2.9.5'
 	testCompile "junit:junit:4.12"
-	compile ("com.esotericsoftware.reflectasm:reflectasm:1.09") {
-		// Remove ASM transient, Forge already provides a newer version
-		exclude group: "org.ow2.asm"
-	}
 }
 
 
@@ -187,20 +186,14 @@ dependencies {
 // Build task definitions
 /////////////////////////////////////////
 
-// shadow ReflectASM to prevent package collision. Choonster saves the day yet again!
+// Thanks to Choonster for mentioning shadowJar as an alternative to shading
 shadowJar {
-    dependencies {
-        include(
-			dependency("com.esotericsoftware.reflectasm:reflectasm:.*")
-		)
-    }
-
-    relocate 'com.esotericsoftware.reflectasm', 'com.cosmicdan.shadowed.reflectasm'
-    classifier '' // Replace the default JAR
+	relocate 'com.fasterxml.jackson', 'com.cosmicdan.shadowed.com.fasterxml.jackson'
+	classifier '' // Replace the default JAR
 }
 
 reobf {
-    shadowJar {} // Reobfuscate the shadowed JAR
+	shadowJar {} // Reobfuscate the shadowed JAR
 }
 
 processResources {
@@ -296,6 +289,6 @@ build {
 }
 
 lombok {
-	version = "1.16.20"
+	version = "1.18.0"
 	sha256 = ""
 }

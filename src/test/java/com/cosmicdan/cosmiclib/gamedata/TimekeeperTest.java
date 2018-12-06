@@ -1,5 +1,5 @@
 package com.cosmicdan.cosmiclib.gamedata;
 
-public class TimekeeperTest {
+class TimekeeperTest {
 	// TODO
 }

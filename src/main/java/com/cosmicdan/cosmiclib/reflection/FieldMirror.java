@@ -1,37 +1,32 @@
 package com.cosmicdan.cosmiclib.reflection;
 
 import com.cosmicdan.cosmiclib.obfuscation.ObfuscatedString;
-import com.esotericsoftware.reflectasm.FieldAccess;
 import lombok.extern.log4j.Log4j2;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
 import java.lang.reflect.Field;
 
+@SuppressWarnings("unused")
 @Log4j2(topic = "CosmicLib/FieldMirror")
-public class FieldMirror extends MirrorBase {
+public class FieldMirror<T> extends MirrorBase {
+	// TODO: Convert to Method Handle? See https://www.baeldung.com/java-method-handles
+	private final Class<?> fieldOwner;
 	private final ObfuscatedString fieldName;
-	private final Class<?> fieldClass;
 
-	private FieldAccess fieldAccess = null;
-	private int fieldIndex;
+	private Field fieldAccess = null;
 
-	/**
-	 * Must be public - use AT if necessary!
-	 * @param fieldName
-	 * @param fieldClass
-	 */
-	public FieldMirror(ObfuscatedString fieldName, Class<?> fieldClass) {
+	public FieldMirror(final ObfuscatedString fieldName, final Class<?> fieldOwner) {
 		this.fieldName = fieldName;
-		this.fieldClass = fieldClass;
+		this.fieldOwner = fieldOwner;
 	}
 
 	@Override
 	public final void init() {
 		if (null == fieldAccess) {
 			try {
-				fieldAccess = FieldAccess.get(fieldClass);
-				fieldIndex = fieldAccess.getIndex(fieldName.get());
-			} catch (RuntimeException exception) {
-				throwError(log, exception, "Could find field: " + fieldClass.getName() + '#' + fieldName);
+				fieldAccess = ReflectionHelper.findField(fieldOwner, fieldName.get());
+			} catch (final RuntimeException exception) {
+				throwError(log, exception, "Could not find field: " + fieldOwner.getName() + '#' + fieldName);
 			}
 		}
 	}
@@ -40,20 +35,30 @@ public class FieldMirror extends MirrorBase {
 	 * Set this field to specified value
 	 * @param fieldOwner The object instance that owns this field
 	 * @param fieldValue The value to set
-	 * @return True if successful, false if not
 	 */
-	public final void set(Object fieldOwner, Object fieldValue) {
+	public final void set(final Object fieldOwner, final T fieldValue) {
 		init();
-		fieldAccess.set(fieldOwner, fieldIndex, fieldValue);
+		try {
+			fieldAccess.set(fieldOwner, fieldValue);
+		} catch (final IllegalAccessException exception) {
+			throwError(log, exception, "Could not set field: " + this.fieldOwner.getName() + '#' + fieldName);
+		}
 	}
 
 	/**
 	 * Get this field value
-	 * @param fieldOwner The object instance that owns this field
+	 * @param fieldInstance The object instance that owns this field
 	 * @return The value, or null if an exception was thrown.
 	 */
-	public final Object get(Object fieldOwner) {
+	public final T get(final Object fieldInstance) {
 		init();
-		return fieldAccess.get(fieldOwner, fieldIndex);
+		T retVal = null;
+		try {
+			//noinspection unchecked
+			retVal = (T) fieldAccess.get(fieldInstance);
+		} catch (final IllegalAccessException exception) {
+			throwError(log, exception, "Could not get field: " + fieldInstance.getClass().getName() + '#' + fieldName);
+		}
+		return retVal;
 	}
 }

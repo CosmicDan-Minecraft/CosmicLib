@@ -1,47 +1,35 @@
 package com.cosmicdan.cosmiclib.reflection;
 
-import com.esotericsoftware.reflectasm.ConstructorAccess;
 import lombok.extern.log4j.Log4j2;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 /**
- * Mirror for instantiating classes with private constructors
+ * Mirror for instantiating classes with non-public constructors
  */
 @Log4j2(topic = "CosmicLib/ConstructorMirror")
 public class ConstructorMirror extends MirrorBase {
+	// TODO: Convert to Method Handle? See https://www.baeldung.com/java-method-handles
 	private final String className;
 	private final Class<?>[] parameterTypes;
 
-	private ConstructorAccess<?> constructorAccess = null;
-	private Constructor<?> constructorSlow = null;
+	private Constructor<?> constructor = null;
 
-	/**
-	 * @param className
-	 * @param parameterTypes Passing null will enable the use of faster ReflectASM constructor
-	 */
-	public ConstructorMirror(String className, Class<?>... parameterTypes) {
+	public ConstructorMirror(final String className, final Class<?>... parameterTypes) {
 		this.className = className;
 		this.parameterTypes = parameterTypes.clone();
 	}
 
 	@Override
 	public final void init() {
-		if ((null == constructorAccess) && (null == constructorSlow)) {
+		if (null == constructor) {
 			try {
-				// always get a legacy reference to the constructor instance
-				constructorSlow = Class.forName(className).getDeclaredConstructor(parameterTypes);
-				constructorSlow.setAccessible(true);
-				if (null == parameterTypes) {
-					// no parameter types specified - cache a fast ReflectASM version!
-					constructorAccess = ConstructorAccess.get(Class.forName(className));
-				}
-			} catch (ClassNotFoundException e) {
-				throwError(log, e, "Class not found: " + className);
-			} catch (NoSuchMethodException e) {
-				throwError(log, e, "Constructor not found with parameters: " + Arrays.toString(parameterTypes));
+				constructor = ReflectionHelper.findConstructor(Class.forName(className), parameterTypes);
+			} catch (final ClassNotFoundException exception) {
+				throwError(log, exception, "Class not found: " + className);
 			}
 		}
 	}
@@ -52,30 +40,23 @@ public class ConstructorMirror extends MirrorBase {
 	 * @param classParams The parameters to pass to the constructor, if any; null if none.
 	 * @return The newly constructed instance.
 	 */
-	public final Object construct(Object classOwner, Object... classParams) {
+	@SuppressWarnings("unused")
+	public final Object construct(final Object classOwner, final Object... classParams) {
 		init();
 		Object retVal = null;
 		try {
-			// faster RefelctASM mode
-			if (null == classOwner) {
-				retVal = ((null == classParams) ?
-						constructorAccess.newInstance() :
-						constructorSlow.newInstance(classParams)
-				);
-			} else {
-				retVal = ((null == classParams) ?
-						constructorAccess.newInstance(classOwner) :
-						constructorSlow.newInstance(classOwner, classParams)
-				);
-			}
-		} catch (InstantiationException e) {
-			throwError(log, e, "Failed instantiating class (might be an abstract class?): " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
-		} catch (IllegalAccessException e) {
-			throwError(log, e, "Illegal access to constructor, cannot instantiate: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
-		} catch (InvocationTargetException e) {
-			throwError(log, e, "Instantiated class threw an exception: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
-		} catch (IllegalArgumentException e) {
-			throwError(log, e, "Instantiated class with wrong number of arguments: " + constructorSlow.getName() + " (" + Arrays.toString(classParams) + ')');
+			if (null == classOwner)
+				retVal = constructor.newInstance(classParams);
+			else
+				retVal = constructor.newInstance(classOwner, classParams);
+		} catch (final InstantiationException exception) {
+			throwError(log, exception, "Failed instantiating class (might be an abstract class?): " + constructor.getName() + " (" + Arrays.toString(classParams) + ')');
+		} catch (final IllegalAccessException exception) {
+			throwError(log, exception, "Illegal access to constructor, cannot instantiate: " + constructor.getName() + " (" + Arrays.toString(classParams) + ')');
+		} catch (final InvocationTargetException exception) {
+			throwError(log, exception, "Instantiated class threw an exception: " + constructor.getName() + " (" + Arrays.toString(classParams) + ')');
+		} catch (final IllegalArgumentException exception) {
+			throwError(log, exception, "Instantiated class with wrong number of arguments: " + constructor.getName() + " (" + Arrays.toString(classParams) + ')');
 		}
 
 		return retVal;

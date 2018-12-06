@@ -1,54 +1,55 @@
 package com.cosmicdan.cosmiclib.reflection;
 
 import com.cosmicdan.cosmiclib.obfuscation.ObfuscatedString;
-import com.esotericsoftware.reflectasm.MethodAccess;
 import lombok.extern.log4j.Log4j2;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+@SuppressWarnings("unused")
 @Log4j2(topic = "CosmicLib/MethodMirror")
-public class MethodMirror extends MirrorBase {
+public class MethodMirror<T> extends MirrorBase {
+	// TODO: Convert to Method Handle? See https://www.baeldung.com/java-method-handles
 	private final ObfuscatedString methodName;
-	private final Class<?> methodClass;
+	private final Class<?> methodOwner;
 	private final Class<?>[] parameterTypes;
 
-	private MethodAccess methodAccess = null;
-	private int methodIndex;
+	private Method methodAccess = null;
 
-	/**
-	 * Must be public - use AT if necessary!
-	 * @param methodName
-	 * @param methodClass
-	 * @param parameterTypes
-	 */
-	public MethodMirror(ObfuscatedString methodName, Class<?> methodClass, Class<?>... parameterTypes) {
+	public MethodMirror(final ObfuscatedString methodName, final Class<?> methodClass, final Class<?>... parameterTypes) {
 		this.methodName = methodName;
-		this.methodClass = methodClass;
-		this.parameterTypes = parameterTypes;
+		this.methodOwner = methodClass;
+		this.parameterTypes = parameterTypes.clone();
 	}
 
 	@Override
 	public final void init() {
 		if (null == methodAccess) {
 			try {
-				methodAccess = MethodAccess.get(methodClass);
-				methodIndex = methodAccess.getIndex(methodName.get(), parameterTypes);
-			} catch (RuntimeException exception) {
-				throwError(log, exception, "Could find method: " + methodClass.getName() + '#' + methodName + '(' + parameterTypes.toString() + ')');
+				methodAccess = ReflectionHelper.findMethod(methodOwner, methodName.getDev(), methodName.getObf(), parameterTypes);
+			} catch (final ReflectionHelper.UnableToFindMethodException exception) {
+				throwError(log, exception, "Error finding method: " + methodOwner.getName() + '#' + methodName + '(' + Arrays.toString(parameterTypes) + ')');
 			}
 		}
 	}
 
 	/**
 	 * Invoke the method with the provided owner object and parameters.
-	 * @param methodOwner The object instance that owns this method.
+	 * @param methodInstance The object instance that owns this method.
 	 * @param methodParams The parameters to pass to the method.
 	 * @return The return object of the method (or boxed primitive), if applicable. Null if void or an error occurred.
 	 */
-	public final Object call(Object methodOwner, Object... methodParams) {
+	public final T call(final Object methodInstance, final Object... methodParams) {
 		init();
-		return methodAccess.invoke(methodOwner, methodIndex, methodParams);
+		T retVal = null;
+		//noinspection OverlyBroadCatchBlock
+		try {
+			//noinspection unchecked
+			retVal = (T) methodAccess.invoke(methodInstance, methodParams);
+		} catch (final Exception exception) {
+			throwError(log, exception, "Error invoking method: " + methodOwner.getName() + '#' + methodName + '(' + Arrays.toString(parameterTypes) + ')');
+		}
+		return retVal;
 	}
 }

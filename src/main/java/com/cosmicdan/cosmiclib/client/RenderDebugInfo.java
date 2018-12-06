@@ -1,6 +1,5 @@
-package com.cosmicdan.cosmiclib.client.gui;
+package com.cosmicdan.cosmiclib.client;
 
-import com.cosmicdan.cosmiclib.Main;
 import com.cosmicdan.cosmiclib.gamedata.Timekeeper;
 import lombok.extern.log4j.Log4j2;
 import net.minecraft.client.Minecraft;
@@ -12,11 +11,11 @@ public class RenderDebugInfo {
 	private final Timekeeper timekeeper = Timekeeper.getInstance();
 
 	@SubscribeEvent
-	public void onDebugOverlay(RenderGameOverlayEvent.Text event) {
+	public void onDebugOverlay(final RenderGameOverlayEvent.Text event) {
 		if (Minecraft.getMinecraft().gameSettings.showDebugInfo) {
 			String debugLine = "CosmicLib: ";
 
-			debugLine += "Time = " + timekeeper.calcHourOfDay() + ":" + String.format("%02d", timekeeper.getMinutesSinceHourElapsed()) + "; ";
+			debugLine += "Time = " + timekeeper.calcHourOfDay() + ':' + String.format("%02d", timekeeper.getMinutesSinceHourElapsed()) + "; ";
 			debugLine += "Day# = " + timekeeper.getWorldDayCount() + "; ";
 			debugLine += "Cached Ticks = " + timekeeper.getWorldTimeCached();
 

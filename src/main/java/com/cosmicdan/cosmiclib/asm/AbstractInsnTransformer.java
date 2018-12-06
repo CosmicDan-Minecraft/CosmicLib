@@ -1,11 +1,5 @@
 package com.cosmicdan.cosmiclib.asm;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Iterator;
-
 import lombok.extern.log4j.Log4j2;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -14,127 +8,110 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
 
-import net.minecraft.launchwrapper.IClassTransformer;
-import org.objectweb.asm.util.Printer;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceMethodVisitor;
-
 /**
  * @author Daniel 'CosmicDan' Connolly
  */
 @Log4j2(topic = "CosmicLib/AbstractInsnTransformer")
-public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> implements IClassTransformer  {
-	private String targetClass;
-	private final String targetMethod;
-	private final String targetDesc;
-	private final String hookReason;
-
-	public AbstractInsnTransformer() {
-		targetClass = getTargetClass();
-		targetMethod = getTargetMethod();
-		targetDesc = getTargetDesc();
-		hookReason = getReason();
-	}
-
-	public abstract String getTargetClass();
-	public abstract String getTargetMethod();
-	public abstract String getTargetDesc();
-	public abstract String getReason();
-
-	public abstract boolean doesModifyClassNode();
-	public abstract ClassNode injectClass(ClassNode toInject);
+public abstract class AbstractInsnTransformer<T extends AbstractInsnNode> extends AbstractTransformerBase  {
+	private String targetPatchedEntryForLog = "";
 
 	/**
 	 * Do your search logic for the desired AbstractInsnNode you want to inject here.
-	 * @param m is the matched MethodNode you can search through
-	 * @return the found AbstractInsnNode you want to inject from (as origin). It will also be passed to injectOps.
+	 * @param methodNode is the matched MethodNode you can search through
+	 * @return the found AbstractInsnNode you want to inject from (as origin). It will also be passed to doNodeInjection.
 	 */
-	public abstract T getTargetNode(MethodNode m);
+	protected abstract T getTargetNode(MethodNode methodNode);
 
-	public abstract boolean shouldInjectOpsBeforeNode();
+	@SuppressWarnings("SameReturnValue")
+	protected abstract boolean shouldInjectOpsBeforeNode();
 
 	/**
 	 * Perform the opcode injections here.
 	 * @param targetNode the origin node we're injecting on (from #getTargetNode)
 	 * @return the modified toInject.
 	 */
-	public abstract InsnList injectOps(T targetNode);
-
+	protected abstract InsnList doNodeInjection(T targetNode);
 
 	@Override
-	public byte[] transform(String name, String transformedName, byte[] classBytes) {
-		if (transformedName.equals(targetClass))
-			return patchClass(classBytes);
-		return classBytes;
-	}
-
-	private byte[] patchClass(byte[] classBytes) {
+	byte[] patchClass(final byte[] classBytes) {
 		ClassNode classNode = new ClassNode();
 		final ClassReader classReader = new ClassReader(classBytes);
 		classReader.accept(classNode, 0);
 		boolean success = false;
 
 		if (doesModifyClassNode()) {
-			classNode = injectClass(classNode);
+			classNode = doClassInjection(classNode);
 			success = true;
 		}
 
-		if ((null != targetMethod) && (null != targetDesc)) {
+		if ((null != getTargetMethod()) && (null != getTargetDesc())) {
 			success = false;
-			final Iterator<MethodNode> methods = classNode.methods.iterator();
-			while(methods.hasNext()) {
-				final MethodNode m = methods.next();
-				if ((m.name.equals(targetMethod) && m.desc.equals(targetDesc))) {
-					// DEBUG
-					//dumpMethodAsmToText(m, "E:/TEMP/before.txt");
-
-					final T targetNode = getTargetNode(m);
-					final InsnList toInject = injectOps(targetNode);
+			for (final MethodNode methodNode : classNode.methods) {
+				if ((methodNode.name.equals(getTargetMethod()) && methodNode.desc.equals(getTargetDesc()))) {
+					final T targetNode = getTargetNode(methodNode);
+					final InsnList toInject = doNodeInjection(targetNode);
 					if (shouldInjectOpsBeforeNode())
-						m.instructions.insertBefore(targetNode, toInject);
+						methodNode.instructions.insertBefore(targetNode, toInject);
 					else
-						m.instructions.insert(targetNode, toInject);
+						methodNode.instructions.insert(targetNode, toInject);
 					success = true;
-					targetClass = targetClass + "#" + targetMethod; // for log output purposes only
+					targetPatchedEntryForLog = getTargetClass() + '#' + getTargetMethod(); // for log output purposes only
 					break;
-
-					// DEBUG
-					//dumpMethodAsmToText(m, "E:/TEMP/after.txt");
 				}
 			}
 		}
 
 		if (success) {
-			log.info("[i] Patched " + targetClass);
-			log.info("    Reason: " + hookReason);
+			log.info("[i] Patched {}", targetPatchedEntryForLog);
+			log.info("    Reason: {}", getReason());
 		} // else log error? Nah, silently fail I guess...
-
-		//ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-		final ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		
+		final ClassWriter writer = new CoremodClassWriter();
 		classNode.accept(writer);
 		return writer.toByteArray();
 	}
 
-	// ASM debug dumping
-	// Thanks to HXSP1947@StackOverflow
-	private static final Printer printer = new Textifier();
-	private static final TraceMethodVisitor mp = new TraceMethodVisitor(printer);
+	/**
+	 * ASM in Forge has it's own Classloader which is apparently unaware of Minecraft classes, so we need to use the current Classloader
+	 * (which is probably FML). COMPUTE_MAX is one alternative to this but that often fails with stackmap errors in Java 1.7+.
+	 *
+	 * I (CosmicDan) copied most of this from ClassWriter; the only real change is getting the classloader on construction instead of
+	 * leaving it up to the class visitor to get it's own.
+	 */
+	private static final class CoremodClassWriter extends ClassWriter {
+		private final ClassLoader classLoader;
 
-	public static void dumpMethodAsmToText(MethodNode m, String outputTextFile) {
-		try {
-			final PrintWriter outputFile = new PrintWriter(outputTextFile);
-			for (final AbstractInsnNode node : m.instructions.toArray()) {
-				outputFile.append(insnToString(node));
+		private CoremodClassWriter() {
+			super(ClassWriter.COMPUTE_FRAMES);
+			classLoader = getClass().getClassLoader();
+		}
+
+		@SuppressWarnings("MethodWithMultipleReturnPoints")
+		@Override
+		protected String getCommonSuperClass(final String type1, final String type2) {
+			Class<?> class1;
+			final Class<?> class2;
+			try {
+				class1 = Class.forName(type1.replace('/', '.'), false, classLoader);
+				class2 = Class.forName(type2.replace('/', '.'), false, classLoader);
+			} catch (final ClassNotFoundException exception) {
+				throw new RuntimeException(exception);
 			}
-			outputFile.flush();
-		} catch (FileNotFoundException e) {}
-	}
 
-	private static String insnToString(AbstractInsnNode insn){
-		insn.accept(mp);
-		final StringWriter sw = new StringWriter();
-		printer.print(new PrintWriter(sw));
-		printer.getText().clear();
-		return sw.toString();
+			if (class1.isAssignableFrom(class2)) {
+				return type1;
+			}
+			if (class2.isAssignableFrom(class1)) {
+				return type2;
+			}
+			if (class1.isInterface() || class2.isInterface()) {
+				return "java/lang/Object";
+			} else {
+				do {
+					class1 = class1.getSuperclass();
+				} while (!class1.isAssignableFrom(class2));
+				return class1.getName().replace('.', '/');
+			}
+		}
 	}
 }
